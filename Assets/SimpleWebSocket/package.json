@@ -1,0 +1,29 @@
+{
+  "name": "me.yiou.simplewebsocket",
+  "version": "0.0.1",
+  "description": "WebSocket client for Unity",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yiochen/SimpleWebSocket.git"
+  },
+  "author": {
+    "name": "Yiou Chen",
+    "url": "https://github.com/yiochen/SimpleWebSocket"
+  },
+  "keywords": [
+    "websocket",
+    "websockets",
+    "unity3d"
+  ],
+  "displayName": "Simple WebSockets",
+  "unity": "2020.2",
+  "dependencies": {},
+  "samples": [
+    {
+      "displayName": "Demo",
+      "description": "WebSocket Example",
+      "path": "Demo"
+    }
+  ]
+}
