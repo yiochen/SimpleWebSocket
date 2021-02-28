@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleWebSocket
@@ -14,9 +11,24 @@ namespace SimpleWebSocket
     public delegate void OnCloseHandler(WebSocketCloseStatus closeCode);
     public abstract class AbstractWebSocketClient
     {
+        /// <summary>
+        /// Callback when the connection is open but before <c>Connect</c>
+        /// resolves.
+        /// </summary>
         public event OnOpenHandler OnOpen;
+        /// <summary>
+        /// Callback when receiving a message from server.
+        /// </summary>
         public event OnMessageHandler OnMessage;
+        /// <summary>
+        /// Callback when encountering an error during connection or when socket
+        /// is open.
+        /// </summary>
         public event OnErrorHandler OnError;
+        /// <summary>
+        /// Callback when the socket is closed, either initiated by server or by
+        /// client.
+        /// </summary>
         public event OnCloseHandler OnClose;
         protected Uri uri;
         protected Dictionary<string, string> headers;

@@ -5,7 +5,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEngine;
 
 namespace SimpleWebSocket
 {
@@ -13,11 +12,14 @@ namespace SimpleWebSocket
     {
         private ClientWebSocket m_Socket = new ClientWebSocket();
 
-        private SynchronizationContext synchronizationContext = SynchronizationContext.Current;
+        private SynchronizationContext synchronizationContext;
 
         private CancellationTokenSource m_TokenSource;
         private CancellationToken m_CancellationToken;
 
+        /// <summary>
+        /// State of the connection.
+        /// </summary>
         public override State State
         {
             get
@@ -46,8 +48,21 @@ namespace SimpleWebSocket
 
         public WebSocketClient(string url, List<string> subprotocols, Dictionary<string, string> headers = null) : base(url, subprotocols, headers) { }
 
+        /// <summary>
+        /// Connect to a WebSocket server as an asynchronous operation.
+        /// </summary>
+        /// <returns><c>Task</c> to await on.</returns>
+        /// <remarks>
+        /// The <see cref="Connect" /> methods will not block. The returned <c>Task</c>
+        /// object will complete after connection is established and
+        /// <c>OnOpen</c> has been called.
+        /// <see cref="Connect" /> will capture the
+        /// <c>SynchronizationContext</c> when called. Callbacks will be called
+        /// using the <c>SynchronizationContext</c>.
+        /// </remarks>
         public override async Task Connect()
         {
+            synchronizationContext = SynchronizationContext.Current;
             m_Socket ??= new ClientWebSocket();
             m_TokenSource = new CancellationTokenSource();
             m_CancellationToken = m_TokenSource.Token;
@@ -76,7 +91,12 @@ namespace SimpleWebSocket
             InvokeOnOpen();
             WaitForMessages();
         }
-
+        /// <summary>
+        /// Cancel any pending tasks and close the connection.
+        /// </summary>
+        /// <param name="closeStatus">Status to communicate to server, default
+        /// to NormalClosure</param>
+        /// <returns><c>Task</c> to await on.</returns>
         public override async Task Close(WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure)
         {
             if (m_CancellationToken.IsCancellationRequested)
@@ -151,7 +171,6 @@ namespace SimpleWebSocket
             {
                 if (!m_CancellationToken.IsCancellationRequested)
                 {
-                    Debug.Log("Exception while waiting for messages: " + e.Message);
                     await synchronizationContext.RunInContext(() =>
                     {
                         InvokeOnError(e.Message);
@@ -162,14 +181,21 @@ namespace SimpleWebSocket
 
         }
 
+        /// <summary>
+        /// Send string data to server.
+        /// </summary>
+        /// <param name="text"></param>
         public override void SendText(string text)
         {
             byte[] encoded = Encoding.UTF8.GetBytes(text);
 
-            // m_Socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
             SendMessage(WebSocketMessageType.Text, new ArraySegment<byte>(encoded, 0, encoded.Length));
         }
 
+        /// <summary>
+        /// Send binary data to server.
+        /// </summary>
+        /// <param name="bytes"></param>
         public override void Send(byte[] bytes)
         {
             SendMessage(WebSocketMessageType.Binary, new ArraySegment<byte>(bytes, 0, bytes.Length));
