@@ -23,4 +23,4 @@ jobs:
       - name: push upm branch
         run: git subtree push --prefix "$PKG_ROOT" origin upm
         env:
-          PKG_ROOT: SimpleWebSocket/Assets/SimpleWebSocket
+          PKG_ROOT: Assets/SimpleWebSocket
