@@ -2,11 +2,11 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,20 +17,10 @@ jobs:
     name: update upm branch
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: push upm branch
-      run: git subtree push --prefix "$PKG_ROOT" origin upm
-      env:
-        PKG_ROOT: SimpleWebSocket/Assets/SimpleWebSocket
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: push upm branch
+        run: git subtree push --prefix "$PKG_ROOT" origin upm
+        env:
+          PKG_ROOT: SimpleWebSocket/Assets/SimpleWebSocket
