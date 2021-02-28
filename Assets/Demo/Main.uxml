@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="Styles.uss" />
+    <ui:VisualElement name="Container">
+        <ui:VisualElement name="ControlPane">
+            <ui:TextField picking-mode="Ignore" value="ws://echo.websocket.org" text="ws://echo.websocket.org" name="EndpointInput" />
+            <ui:Button text="CONNECT" display-tooltip-when-elided="true" name="ConnectButton" />
+            <ui:Button text="DISCONNECT" display-tooltip-when-elided="true" name="DisconnectButton" />
+        </ui:VisualElement>
+        <ui:VisualElement name="DialogPane">
+            <ui:ListView focusable="true" name="DialogList" />
+            <ui:VisualElement name="InputContainer" value="ws://echo.websocket.org" text="placeholder">
+                <ui:TextField picking-mode="Ignore" value="hello" text="hello" name="MessageInput" />
+                <ui:Button text="SEND" name="SendButton" display-tooltip-when-elided="true" />
+                <ui:Button text="DOUBLE SEND" name="DoubleSendButton" display-tooltip-when-elided="true" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
