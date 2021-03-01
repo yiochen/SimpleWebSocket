@@ -32,6 +32,13 @@ public class MyScript : MonoBehavior
         // Connect to the server
         await client.Connect();
 
+        // Send text
+        client.SendText("Hello world");
+
+        // send binary
+        byte[] bytes = System.Text.Encoding.UTF8.GetBytes("Hello world");
+        client.Send(bytes);
+
         // Disconnect
         await client.Close();
     }
