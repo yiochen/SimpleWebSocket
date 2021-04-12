@@ -4,7 +4,6 @@ using System.Net.WebSockets;
 using System.Threading.Tasks;
 using AOT;
 using System.Runtime.InteropServices;
-using UnityEngine;
 
 namespace SimpleWebSocket
 {
@@ -13,7 +12,8 @@ namespace SimpleWebSocket
 
         private int instanceId;
 
-        // private TaskCompletionSource<bool> ConnectingTask = null;
+        private TaskCompletionSource<bool> ConnectingTask = null;
+        private TaskCompletionSource<bool> ClosingTask = null;
 
         public override State State
         {
@@ -65,32 +65,49 @@ namespace SimpleWebSocket
 
         public override Task Connect()
         {
-            Debug.Log("WebSocket Connect!");
             int ret = WebSocketConnect(this.instanceId);
             if (ret < 0)
             {
                 throw GetErrorMessageFromCode(ret, null);
             }
-
-            // TaskCompletionSource<bool> tsc = new TaskCompletionSource<bool>();
-
-            return Task.CompletedTask;
+            ConnectingTask = new TaskCompletionSource<bool>();
+            return ConnectingTask.Task;
         }
 
         public override Task Close(WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure)
         {
-            Debug.Log("WebSocket Close!");
             int ret = WebSocketClose(this.instanceId, (int)closeStatus, "");
 
             if (ret < 0)
+            {
                 throw GetErrorMessageFromCode(ret, null);
+            }
 
-            return Task.CompletedTask;
+            ClosingTask = new TaskCompletionSource<bool>();
+
+            return ClosingTask.Task;
+        }
+
+        internal void TrySetCloseResult()
+        {
+            if (ClosingTask != null)
+            {
+                ClosingTask.TrySetResult(true);
+                ClosingTask = null;
+            }
+        }
+
+        internal void TrySetConnectResult()
+        {
+            if (ConnectingTask != null)
+            {
+                ConnectingTask.TrySetResult(true);
+                ConnectingTask = null;
+            }
         }
 
         public override void Send(byte[] bytes)
         {
-            Debug.Log("WebSocket Send!");
             int ret = WebSocketSend(this.instanceId, bytes, bytes.Length);
 
             if (ret < 0)
@@ -101,12 +118,12 @@ namespace SimpleWebSocket
 
         public override void SendText(string text)
         {
-            Debug.Log("WebSocket Send!");
             int ret = WebSocketSendText(this.instanceId, text);
 
             if (ret < 0)
+            {
                 throw GetErrorMessageFromCode(ret, null);
-
+            }
         }
 
         private static WebSocketException GetErrorMessageFromCode(int errorCode, Exception inner)
@@ -182,7 +199,6 @@ namespace SimpleWebSocket
             WebSocketSetOnClose(RouteOnCloseEvent);
 
             isInitialized = true;
-            Debug.Log("WebSocketFactory initialized!");
         }
 
         /// <summary>
@@ -195,18 +211,17 @@ namespace SimpleWebSocket
 
             instances.Remove(instanceId);
             WebSocketFree(instanceId);
-            Debug.Log("WebSocketFactory Instance Destroyed!");
 
         }
 
         [MonoPInvokeCallback(typeof(OnOpenCallback))]
         public static void RouteOnOpenEvent(int instanceId)
         {
-            Debug.Log($"WebSocketFactory Open {instanceId}!");
 
             if (instances.TryGetValue(instanceId, out var instance))
             {
                 instance.InvokeOnOpen();
+                instance.TrySetConnectResult();
             }
 
         }
@@ -214,7 +229,6 @@ namespace SimpleWebSocket
         [MonoPInvokeCallback(typeof(OnMessageCallback))]
         public static void RouteOnMessageEvent(int instanceId, System.IntPtr msgPtr, int msgSize)
         {
-            Debug.Log($"WebSocketFactory Message {instanceId}!");
 
             if (instances.TryGetValue(instanceId, out var instanceRef))
             {
@@ -229,7 +243,6 @@ namespace SimpleWebSocket
         public static void RouteOnErrorEvent(int instanceId, System.IntPtr errorPtr)
         {
 
-            Debug.Log($"WebSocketFactory Error {instanceId}!");
 
             if (instances.TryGetValue(instanceId, out var instanceRef))
             {
@@ -243,12 +256,13 @@ namespace SimpleWebSocket
         [MonoPInvokeCallback(typeof(OnCloseCallback))]
         public static void RouteOnCloseEvent(int instanceId, int closeCode)
         {
-            Debug.Log($"WebSocketFactory Close {instanceId}!");
 
             if (instances.TryGetValue(instanceId, out var instanceRef))
             {
                 // todo convert from closeCode to close status
                 instanceRef.InvokeOnClose(WebSocketCloseStatus.Empty);
+                instanceRef.TrySetConnectResult();
+                instanceRef.TrySetCloseResult();
             }
         }
     }
