@@ -6,9 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+
 namespace SimpleWebSocket
 {
-    public class WebSocketClient : AbstractWebSocketClient
+    internal class WebSocketClientNative : WebSocketClient
     {
         private ClientWebSocket m_Socket = new ClientWebSocket();
 
@@ -42,11 +43,11 @@ namespace SimpleWebSocket
             }
         }
 
-        public WebSocketClient(string url, Dictionary<string, string> headers = null) : base(url, headers) { }
+        internal WebSocketClientNative(string url, Dictionary<string, string> headers = null) : base(url, headers) { }
 
-        public WebSocketClient(string url, string subprotocol, Dictionary<string, string> headers = null) : base(url, subprotocol, headers) { }
+        internal WebSocketClientNative(string url, string subprotocol, Dictionary<string, string> headers = null) : base(url, subprotocol, headers) { }
 
-        public WebSocketClient(string url, List<string> subprotocols, Dictionary<string, string> headers = null) : base(url, subprotocols, headers) { }
+        internal WebSocketClientNative(string url, List<string> subprotocols, Dictionary<string, string> headers = null) : base(url, subprotocols, headers) { }
 
         /// <summary>
         /// Connect to a WebSocket server as an asynchronous operation.
@@ -79,7 +80,6 @@ namespace SimpleWebSocket
             try
             {
                 await m_Socket.ConnectAsync(uri, m_CancellationToken);
-
             }
             catch (Exception e)
             {

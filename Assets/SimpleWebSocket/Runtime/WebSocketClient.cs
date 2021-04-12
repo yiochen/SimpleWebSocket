@@ -9,7 +9,7 @@ namespace SimpleWebSocket
     public delegate void OnMessageHandler(byte[] data);
     public delegate void OnErrorHandler(string errorMsg);
     public delegate void OnCloseHandler(WebSocketCloseStatus closeCode);
-    public abstract class AbstractWebSocketClient
+    public abstract class WebSocketClient
     {
         /// <summary>
         /// Callback when the connection is open but before <c>Connect</c>
@@ -36,11 +36,11 @@ namespace SimpleWebSocket
 
         public abstract State State { get; }
 
-        protected AbstractWebSocketClient(string url, Dictionary<string, string> headers = null) : this(url, new List<string>(), headers) { }
+        protected WebSocketClient(string url, Dictionary<string, string> headers = null) : this(url, new List<string>(), headers) { }
 
-        protected AbstractWebSocketClient(string url, string subprotocol, Dictionary<string, string> headers = null) : this(url, new List<string> { subprotocol }, headers) { }
+        protected WebSocketClient(string url, string subprotocol, Dictionary<string, string> headers = null) : this(url, new List<string> { subprotocol }, headers) { }
 
-        public AbstractWebSocketClient(string url, List<string> subprotocols, Dictionary<string, string> headers = null)
+        public WebSocketClient(string url, List<string> subprotocols, Dictionary<string, string> headers = null)
         {
             uri = new Uri(url);
 
@@ -53,22 +53,22 @@ namespace SimpleWebSocket
                 throw new ArgumentException("Unsupported protocol: " + protocol);
         }
 
-        protected void InvokeOnOpen()
+        public void InvokeOnOpen()
         {
             OnOpen?.Invoke();
         }
 
-        protected void InvokeOnMessage(byte[] data)
+        public void InvokeOnMessage(byte[] data)
         {
             OnMessage?.Invoke(data);
         }
 
-        protected void InvokeOnError(string errorMsg)
+        public void InvokeOnError(string errorMsg)
         {
             OnError?.Invoke(errorMsg);
         }
 
-        protected void InvokeOnClose(WebSocketCloseStatus code)
+        public void InvokeOnClose(WebSocketCloseStatus code)
         {
             OnClose?.Invoke(code);
         }
@@ -80,6 +80,33 @@ namespace SimpleWebSocket
 
         public abstract void SendText(string text);
 
+        public static WebSocketClient Create(string url, Dictionary<string, string> headers = null)
+        {
+#if !UNITY_WEBGL || UNITY_EDITOR
+            return new WebSocketClientNative(url, headers);
+#else
+            return new WebSocketClientWebgl(url, headers);
+#endif
+
+        }
+
+        public static WebSocketClient Create(string url, string subprotocol, Dictionary<string, string> headers = null)
+        {
+#if !UNITY_WEBGL || UNITY_EDITOR
+            return new WebSocketClientNative(url, subprotocol, headers);
+#else
+            return new WebSocketClientWebgl(url, subprotocol, headers);
+#endif
+        }
+
+        public static WebSocketClient Create(string url, List<string> subprotocols, Dictionary<string, string> headers = null)
+        {
+#if !UNITY_WEBGL || UNITY_EDITOR
+            return new WebSocketClientNative(url, subprotocols, headers);
+#else
+            return new WebSocketClientWebgl(url, subprotocols, headers);
+#endif
+        }
     }
 
     /// <summary>C# WebSocketState has 6 types

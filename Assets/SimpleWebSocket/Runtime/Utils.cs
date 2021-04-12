@@ -4,10 +4,16 @@ using System.Threading.Tasks;
 
 namespace SimpleWebSocket
 {
-    delegate void PromisifiedCallback(TaskCompletionSource<bool> tsc);
+    delegate void Callback(TaskCompletionSource<bool> tsc);
     internal static class Utils
     {
-        internal static Task Promisify(PromisifiedCallback callback)
+        /// <summary>
+        /// Convert a callback to Task that can be await on. The callback should
+        /// set the TaskCompletionSource's result when done.
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <returns></returns>
+        internal static Task Taskify(Callback callback)
         {
             TaskCompletionSource<bool> tsc = new TaskCompletionSource<bool>();
             callback.Invoke(tsc);
@@ -16,7 +22,7 @@ namespace SimpleWebSocket
 
         internal static Task RunInContext(this SynchronizationContext context, Action callback)
         {
-            return Promisify((tsc) =>
+            return Taskify((tsc) =>
             {
                 context.Post(_ =>
                 {

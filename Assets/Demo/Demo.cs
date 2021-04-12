@@ -1,50 +1,45 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
-using UnityEditor;
-using System.Net.WebSockets;
+// using UnityWebSocket;
+using UnityEngine.UI;
 using SimpleWebSocket;
 
 public class Demo : MonoBehaviour
 {
-    private ListView m_DialogListView;
-    private VisualTreeAsset m_MessageItemAsset;
+    [SerializeField] private RectTransform DialogListView;
+    [SerializeField] private Text MessageItemAsset;
+    [SerializeField] private Button ConnectButton;
+    [SerializeField] private Button DisconnectButton;
+    [SerializeField] private Button SendButton;
+    [SerializeField] private Button DoubleSendButton;
+    [SerializeField] private InputField HostInput;
+    [SerializeField] private InputField MessageInput;
+    [SerializeField] private float NextTop = 0;
+
     private List<string> m_DialogList = new List<string>();
     private WebSocketClient m_Client;
 
     private System.Threading.Thread m_MainThread;
 
-    private void OnEnable()
+    public void OnConnectClicked()
     {
-        m_MessageItemAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Demo/MessageItem.uxml");
+        Connect(HostInput.text);
+    }
 
-        var root = GetComponent<UIDocument>().rootVisualElement;
-        var connectButton = root.Q<Button>("ConnectButton");
-        var disconnectButton = root.Q<Button>("DisconnectButton");
-        var sendButton = root.Q<Button>("SendButton");
-        var doubleSendButton = root.Q<Button>("DoubleSendButton");
-        var endpointInput = root.Q<TextField>("EndpointInput");
-        var messageInput = root.Q<TextField>("MessageInput");
-        m_DialogListView = root.Q<ListView>("DialogList");
+    public void OnDisconnectClicked()
+    {
+        Disconnect();
+    }
 
-        connectButton.RegisterCallback<ClickEvent>(e =>
-        {
-            Connect(endpointInput.text);
-        });
-        disconnectButton.RegisterCallback<ClickEvent>(e =>
-        {
-            Disconnect();
-        });
-        sendButton.RegisterCallback<ClickEvent>(e =>
-        {
-            Send(messageInput.text);
-        });
-        doubleSendButton.RegisterCallback<ClickEvent>(e =>
-        {
-            Send($"{messageInput.text} -- 1");
-            Send($"{messageInput.text} -- 2");
-        });
+    public void OnSendClicked()
+    {
+        Send(MessageInput.text);
+    }
+
+    public void OnDoubleSendClicked()
+    {
+        Send($"{MessageInput.text} -- 1");
+        Send($"{MessageInput.text} -- 2");
     }
 
     private void Send(string message)
@@ -55,20 +50,15 @@ public class Demo : MonoBehaviour
     void Start()
     {
         m_MainThread = System.Threading.Thread.CurrentThread;
-        m_DialogListView.itemsSource = m_DialogList;
-        m_DialogListView.makeItem = () => m_MessageItemAsset.CloneTree();
-        m_DialogListView.bindItem = (element, i) =>
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.playModeStateChanged += (UnityEditor.PlayModeStateChange state) =>
         {
-            element.Q<Label>("Message").text = m_DialogList[i];
-        };
-
-        EditorApplication.playModeStateChanged += (PlayModeStateChange state) =>
-        {
-            if (state == PlayModeStateChange.ExitingPlayMode)
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
             {
                 Disconnect();
             }
         };
+#endif
     }
 
     private async void Connect(string endpoint)
@@ -79,13 +69,13 @@ public class Demo : MonoBehaviour
             Debug.LogError("Already has a client, cannot connect");
             return;
         }
-        m_Client = new WebSocketClient(endpoint);
+        m_Client = WebSocketClient.Create(endpoint);
         m_Client.OnOpen += () =>
         {
             Debug.Log($"OnOpen called on {m_Thread}");
             AddToDialogList($"Connected to {endpoint}");
         };
-        m_Client.OnClose += (WebSocketCloseStatus closeStatus) =>
+        m_Client.OnClose += (System.Net.WebSockets.WebSocketCloseStatus closeStatus) =>
         {
             Debug.Log($"OnClose called with closeStatus {closeStatus} on {m_Thread}");
             AddToDialogList($"Disconnected from {endpoint}");
@@ -95,14 +85,25 @@ public class Demo : MonoBehaviour
             Debug.Log($"OnMessage called on {m_Thread}");
             AddToDialogList(System.Text.Encoding.UTF8.GetString(message));
         };
+        m_Client.OnError += (string error) =>
+        {
+            Debug.Log($"OnError called on {m_Thread}");
+            AddToDialogList(error);
+        };
         await m_Client.Connect();
         Debug.Log($"Connected! on {m_Thread}");
     }
 
     private void AddToDialogList(string text)
     {
-        m_DialogList.Add(text);
-        m_DialogListView.Refresh();
+        Text message = Instantiate(MessageItemAsset, Vector3.zero, Quaternion.identity);
+        message.transform.parent = DialogListView;
+        RectTransform rect = message.GetComponent<RectTransform>();
+        rect.anchoredPosition = new Vector2(0, NextTop);
+        rect.SetRight(0);
+        message.text = text;
+
+        NextTop -= 50;
     }
 
     private async void Disconnect()
@@ -128,5 +129,26 @@ public class Demo : MonoBehaviour
             return "pooled thread";
         }
     }
+}
+public static class RectTransformExtensions
+{
+    public static void SetLeft(this RectTransform rt, float left)
+    {
+        rt.offsetMin = new Vector2(left, rt.offsetMin.y);
+    }
 
+    public static void SetRight(this RectTransform rt, float right)
+    {
+        rt.offsetMax = new Vector2(-right, rt.offsetMax.y);
+    }
+
+    public static void SetTop(this RectTransform rt, float top)
+    {
+        rt.offsetMax = new Vector2(rt.offsetMax.x, -top);
+    }
+
+    public static void SetBottom(this RectTransform rt, float bottom)
+    {
+        rt.offsetMin = new Vector2(rt.offsetMin.x, bottom);
+    }
 }
