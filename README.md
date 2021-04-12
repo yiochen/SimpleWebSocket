@@ -1,6 +1,20 @@
 # SimpleWebSocket
 
-A WebSocket client implementation for Unity3d.
+A WebSocket client implementation for Unity3d, supports WebGL.
+
+This package is based on
+[NativeWebSocket](https://github.com/endel/NativeWebSocket) with slight
+modification of the API. For example, making `Connect` on WebGl wait for the
+connection to open before marking the Task as completed.
+
+## Installation
+
+This package can be installed using [Unity Package
+Manager](https://docs.unity3d.com/Manual/upm-ui-giturl.html) using a git url.
+
+```
+https://github.com/yiochen/SimpleWebSocket.git#upm
+```
 
 ## Usage
 
@@ -15,7 +29,7 @@ public class MyScript : MonoBehavior
     async void Start()
     {
         // Create a webSocket client
-        WebSocketClient client = new WebSocketClient("ws://echo.websocket.org");
+        WebSocketClient client = WebSocketClient.Create("ws://echo.websocket.org");
 
         client.OnOpen += () => {
             Debug.Log("Connection open!");
